@@ -170,16 +170,13 @@ void OctomapWorld::castRay(const octomap::point3d& sensor_origin,
       } else {
         for (const auto& key : key_ray_) {
           octomap::point3d voxel_coordinate = octree_->keyToCoord(key);
-          if ((voxel_coordinate - sensor_origin).norm() <
-                  params_.max_free_space ||
-              voxel_coordinate.z() >
-                  (sensor_origin.z() - params_.min_height_free_space)) {
+          if (std::abs(voxel_coordinate.z() / (voxel_coordinate - sensor_origin).norm()) > 0.05) {
             free_cells->insert(key);
           }
         }
       }
     }
-    // Mark endpoing as occupied.
+    // Mark endpoint as occupied.
     octomap::OcTreeKey key;
     if (octree_->coordToKeyChecked(point, key)) {
       occupied_cells->insert(key);
@@ -196,10 +193,7 @@ void OctomapWorld::castRay(const octomap::point3d& sensor_origin,
       } else {
         for (const auto& key : key_ray_) {
           octomap::point3d voxel_coordinate = octree_->keyToCoord(key);
-          if ((voxel_coordinate - sensor_origin).norm() <
-                  params_.max_free_space ||
-              voxel_coordinate.z() >
-                  (sensor_origin.z() - params_.min_height_free_space)) {
+          if (std::abs(voxel_coordinate.z() / (voxel_coordinate - sensor_origin).norm()) > 0.05) {
             free_cells->insert(key);
           }
         }
