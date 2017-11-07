@@ -33,6 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <minkindr_conversions/kindr_tf.h>
 #include <minkindr_conversions/kindr_msg.h>
 #include <minkindr_conversions/kindr_xml.h>
+#include <pcl/common/transforms.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/io/ply_io.h>
 
@@ -208,6 +209,8 @@ void OctomapManager::advertiseServices() {
       "save_map", &OctomapManager::saveOctomapCallback, this);
   load_octree_service_ = nh_private_.advertiseService(
       "load_map", &OctomapManager::loadOctomapCallback, this);
+  load_octree_in_frame_service_ = nh_private_.advertiseService(
+      "load_map_in_frame", &OctomapManager::loadOctomapInFrameCallback, this);
   save_point_cloud_service_ = nh_private_.advertiseService(
       "save_point_cloud", &OctomapManager::savePointCloudCallback, this);
   set_box_occupancy_service_ = nh_private_.advertiseService(
@@ -326,6 +329,53 @@ bool OctomapManager::loadOctomapCallback(
           "No known file extension (.bt, .pcd, .ply): " << request.file_path);
       return false;
     }
+    octomap::KeySet free_cells, occupied_cells;
+    for (size_t i = 0u; i < cloud->size(); ++i) {
+      const octomap::point3d p_G_point((*cloud)[i].x, (*cloud)[i].y,
+                                       (*cloud)[i].z);
+      octomap::OcTreeKey key;
+      if (octree_->coordToKeyChecked(p_G_point, key)) {
+        occupied_cells.insert(key);
+      }
+    }
+    updateOccupancy(&free_cells, &occupied_cells);
+    return true;
+  }
+}
+
+bool OctomapManager::loadOctomapInFrameCallback(
+    volumetric_msgs::LoadMapInFrame::Request& request,
+    volumetric_msgs::LoadMapInFrame::Response& response) {
+  std::string extension = request.file_path.substr(
+      request.file_path.find_last_of(".") + 1);
+  if (extension == "bt") {
+    return loadOctomapFromFile(request.file_path);
+  } else {
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(
+        new pcl::PointCloud<pcl::PointXYZ>);
+    if (extension == "pcd") {
+      pcl::io::loadPCDFile < pcl::PointXYZ > (request.file_path, *cloud);
+    } else if (extension == "ply") {
+      pcl::io::loadPLYFile < pcl::PointXYZ > (request.file_path, *cloud);
+    } else {
+      ROS_ERROR_STREAM(
+          "No known file extension (.bt, .pcd, .ply): " << request.file_path);
+      return false;
+    }
+    // Transform point cloud with frame.
+    if (tf_listener_.waitForTransform(world_frame_, request.frame,
+                                      ros::Time::now(),
+                                      ros::Duration(2.0))) {
+
+      tf::StampedTransform tf_transform;
+      tf_listener_.lookupTransform(world_frame_, request.frame,
+                                   ros::Time(0), tf_transform);
+
+      Transformation transform;
+      tf::transformTFToKindr(tf_transform, &transform);
+      pcl::transformPointCloud (*cloud, *cloud, transform.getTransformationMatrix());
+    }
+
     octomap::KeySet free_cells, occupied_cells;
     for (size_t i = 0u; i < cloud->size(); ++i) {
       const octomap::point3d p_G_point((*cloud)[i].x, (*cloud)[i].y,
