@@ -721,7 +721,7 @@ bool OctomapWorld::loadOctomapFromFile(const std::string& filename) {
 }
 
 bool OctomapWorld::writeOctomapToFile(const std::string& filename) {
-  return octree_->writeBinary(filename);
+  return octree_->writeBinaryConst(filename);
 }
 
 bool OctomapWorld::isSpeckleNode(const octomap::OcTreeKey& key) const {
