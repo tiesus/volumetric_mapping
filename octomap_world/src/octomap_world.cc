@@ -48,7 +48,7 @@ Eigen::Vector3d pointOctomapToEigen(const octomap::point3d& point) {
   return Eigen::Vector3d(point.x(), point.y(), point.z());
 }
 
-const float OctomapWorld::kMinTanAngleForFreeVoxelLineOfSight = tan(3 *M_PI/180.);
+const float OctomapWorld::kMinTanAngleForFreeVoxelLineOfSight = tan(7 *M_PI/180.);
 
 // Create a default parameters object and call the other constructor with it.
 OctomapWorld::OctomapWorld() : OctomapWorld(OctomapParameters()) {}
