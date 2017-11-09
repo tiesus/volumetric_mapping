@@ -205,6 +205,8 @@ void OctomapManager::advertiseServices() {
       "publish_all", &OctomapManager::publishAllCallback, this);
   get_map_service_ = nh_private_.advertiseService(
       "get_map", &OctomapManager::getOctomapCallback, this);
+  get_point_cloud_service_ = nh_private_.advertiseService(
+      "get_point_cloud", &OctomapManager::getPointCloudCallback, this);
   save_octree_service_ = nh_private_.advertiseService(
       "save_map", &OctomapManager::saveOctomapCallback, this);
   load_octree_service_ = nh_private_.advertiseService(
@@ -308,6 +310,15 @@ bool OctomapManager::getOctomapCallback(
     octomap_msgs::GetOctomap::Request& request,
     octomap_msgs::GetOctomap::Response& response) {
   return getOctomapFullMsg(&response.map);
+}
+
+bool OctomapManager::getPointCloudCallback(
+    volumetric_msgs::GetPointCloud::Request& request,
+    volumetric_msgs::GetPointCloud::Response& response) {
+  pcl::PointCloud<pcl::PointXYZ> point_cloud;
+  getOccupiedPointCloud(&point_cloud);
+  pcl::toROSMsg(point_cloud, response.point_cloud);
+  return true;
 }
 
 bool OctomapManager::loadOctomapCallback(

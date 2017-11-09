@@ -38,6 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <octomap_msgs/GetOctomap.h>
 #include <std_srvs/Empty.h>
 #include <tf/transform_listener.h>
+#include <volumetric_msgs/GetPointCloud.h>
 #include <volumetric_msgs/LoadMap.h>
 #include <volumetric_msgs/LoadMapInFrame.h>
 #include <volumetric_msgs/SaveMap.h>
@@ -80,6 +81,8 @@ class OctomapManager : public OctomapWorld {
                           std_srvs::Empty::Response& response);
   bool getOctomapCallback(octomap_msgs::GetOctomap::Request& request,
                           octomap_msgs::GetOctomap::Response& response);
+  bool getPointCloudCallback(volumetric_msgs::GetPointCloud::Request& request,
+                             volumetric_msgs::GetPointCloud::Response& response);
 
   bool loadOctomapCallback(volumetric_msgs::LoadMap::Request& request,
                            volumetric_msgs::LoadMap::Response& response);
@@ -166,6 +169,7 @@ class OctomapManager : public OctomapWorld {
   ros::ServiceServer reset_map_service_;
   ros::ServiceServer publish_all_service_;
   ros::ServiceServer get_map_service_;
+  ros::ServiceServer get_point_cloud_service_;
   ros::ServiceServer save_octree_service_;
   ros::ServiceServer load_octree_service_;
   ros::ServiceServer load_octree_in_frame_service_;
