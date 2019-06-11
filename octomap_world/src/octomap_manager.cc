@@ -243,6 +243,7 @@ void OctomapManager::advertisePublishers() {
 }
 
 void OctomapManager::publishAll() {
+  ros::Time now = ros::Time::now();
   if (latch_topics_ || occupied_nodes_pub_.getNumSubscribers() > 0 ||
       free_nodes_pub_.getNumSubscribers() > 0) {
     visualization_msgs::MarkerArray occupied_nodes, free_nodes;
@@ -255,6 +256,7 @@ void OctomapManager::publishAll() {
     octomap_msgs::Octomap binary_map;
     getOctomapBinaryMsg(&binary_map);
     binary_map.header.frame_id = world_frame_;
+    binary_map.header.stamp = now;
     binary_map_pub_.publish(binary_map);
   }
 
@@ -262,6 +264,7 @@ void OctomapManager::publishAll() {
     octomap_msgs::Octomap full_map;
     getOctomapBinaryMsg(&full_map);
     full_map.header.frame_id = world_frame_;
+    full_map.header.stamp = now;
     full_map_pub_.publish(full_map);
   }
 
@@ -271,12 +274,13 @@ void OctomapManager::publishAll() {
     sensor_msgs::PointCloud2 cloud;
     pcl::toROSMsg(point_cloud, cloud);
     cloud.header.frame_id = world_frame_;
+    cloud.header.stamp = now;
     pcl_pub_.publish(cloud);
   }
 
   if (use_tf_transforms_ && nearest_obstacle_pub_.getNumSubscribers() > 0) {
     Transformation robot_to_world;
-    if (lookupTransformTf(robot_frame_, world_frame_, ros::Time::now(),
+    if (lookupTransformTf(robot_frame_, world_frame_, now,
                       &robot_to_world)) {
       Eigen::Vector3d robot_center = robot_to_world.getPosition();
       pcl::PointCloud<pcl::PointXYZ> point_cloud;
@@ -284,7 +288,7 @@ void OctomapManager::publishAll() {
       sensor_msgs::PointCloud2 cloud;
       pcl::toROSMsg(point_cloud, cloud);
       cloud.header.frame_id = world_frame_;
-      cloud.header.stamp = ros::Time::now();
+      cloud.header.stamp = now;
       nearest_obstacle_pub_.publish(cloud);
     }
   }
